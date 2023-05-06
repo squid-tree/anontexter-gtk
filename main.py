@@ -1,12 +1,18 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-
 import functions
-from settings.settings import *
-
+from settings.settings import sshhost as o1sshhost
+from settings.settings import sshuser as o1sshuser
+from settings.settings import sshport as o1sshport
+from settings.settings import messagesdirectory as o1messagesdirectory
+from settings.settings import recpgpdir as o1recpgpdir
+from settings.settings import usrpgpdir as o1usrpgpdir
+from settings.settings import userpgppassword as o1userpgppassword 
+from settings.settings import sshpassword as o1sshpassword 
 import os
 import re
+
 
 settingsdir = str('%s/settings/settings.py' % os.path.dirname(os.path.realpath(__file__)))
 
@@ -77,13 +83,14 @@ class SettingsWindow(Gtk.Window):
 
         # Appends current settings to fields
         self.labels = SettingsWindow.getlabels()
-        self.ip.add_text(self.labels["sshhost"])
-        self.port.add_text(self.labels["sshport"]) 
-        self.username.add_text(self.labels["sshport"])
-        self.sshdir.add_text(self.labels['messagesdirectory'])
-        self.rcpgdir.add_text(self.labels['recpgpdir'])
-        self.uspgdir.add_text(self.labels['usrpgpdir'])
-        self.uspgpwd.add_text(self.labels['usrpgppassword'])
+        self.ip.set_text(self.labels["sshhost"])
+        self.port.set_text(self.labels["sshport"]) 
+        self.username.set_text(self.labels["sshuser"])
+        self.sshdir.set_text(self.labels['messagesdirectory'])
+        self.rcpgdir.set_text(self.labels['recpgpdir'])
+        self.uspgdir.set_text(self.labels['usrpgpdir'])
+        self.uspgpwd.set_text(self.labels['userpgppassword'])
+        self.sshpwd.set_text(self.labels['sshpassword'])
 
         # Packs all elements into column
         self.column.pack_start(self.ip, False, False, 0)
@@ -104,16 +111,16 @@ class SettingsWindow(Gtk.Window):
         self.add(self.vbox)
 
     def getlabels():
-        from settings.settings import *
         labels = {}
-        labels['sshhost'] = sshhost
-        labels['sshuser'] = sshuser
-        labels['sshport'] = sshport
-        labels['messagesdirectory'] = messagesdirectory
-        labels['recpgpdir'] = recpgpdir
-        labels['usrpgpdir'] = usrpgpdir
-        labels['userpgppassword'] = userpgppassword
-        del settings.settings
+        labels['sshhost'] = o1sshhost
+        labels['sshuser'] = o1sshuser
+        labels['sshport'] = o1sshport
+        labels['messagesdirectory'] = o1messagesdirectory
+        labels['recpgpdir'] = o1recpgpdir
+        labels['usrpgpdir'] = o1usrpgpdir
+        labels['userpgppassword'] = o1userpgppassword
+        labels['sshpassword'] = o1sshpassword
+        return labels
 
     
     def filechooser(self,label):
@@ -146,7 +153,7 @@ class SettingsWindow(Gtk.Window):
 
         testresults = self.checker()
 
-        contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir = \'%s\'\nuserpgppassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd))
+        contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir = \'%s\'\nuserpgppassword = \'%s\'\nsshpassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd,sshpwdtext))
 
         if testresults[0] == True:
             with open(settingsdir, 'w') as file:
@@ -181,16 +188,18 @@ class SettingsWindow(Gtk.Window):
         sshpwdtext = self.sshpwd.get_text()
         sshdirector = self.sshdir.get_text() 
         
-        contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir =       \'%s\'\nuserpgppassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd))
+        contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir = \'%s\'\nuserpgppassword = \'%s\'\nsshpassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd,sshpwdtext))
 
         with open(settingsdir, "r") as file:
             filecontents = file.read()
 
         if filecontents == contents:
-            o = StatusWindow(contents = 'Succesfully exited')
+            o = self.StatusWindow(content = 'Succesfully exited')
+            o.show_all()
             win_destroy(super())
         else:
-            o = StatusWindow(contents = 'Changes have not been saved, please save them or cancel')
+            o = self.StatusWindow(content = 'Changes have not been saved, please save them or cancel')
+            o.show_all()
              
     class CancelWindow(Gtk.Window):
             def __init__(self, superclass):
