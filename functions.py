@@ -31,9 +31,10 @@ def sshpasswordverif(sshhost,sshuser,sshport,password):
 
 def pgppasswordverif(usrpgp, password):
     try:
-        usrpgp.unlock(password)
-    except pgpy.errors.PGPDecryptionError:
-        return checkedpassword(is_correct=False)
+        usrpgp[0].unlock(password)
+    except pgpy.errors.PGPDecryptionError as e:
+        return checkedpassword(is_correct=False, other_error=repr(e)) 
+        
     except Exception as e:
         return checkedpassword(is_correct=False, other_error=repr(e))
     else:

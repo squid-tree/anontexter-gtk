@@ -2,12 +2,13 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-from functions import * 
+import functions
 from settings.settings import *
 
 import os
+import re
 
-settingsdir = str('%s/settings/settings.py' % os.path.realpath(__file__))
+settingsdir = str('%s/settings/settings.py' % os.path.dirname(os.path.realpath(__file__)))
 
 
 def win_destroy(widget):
@@ -18,6 +19,8 @@ class SettingsWindow(Gtk.Window):
         super().__init__(title='Anontexter Gtk - Settings')
         self.connect("destroy", win_destroy)
         
+        
+
         # Defines column Box
         self.column = Gtk.Box(spacing=5, orientation=Gtk.Orientation.VERTICAL,homogeneous=False)
         self.column.set_halign(Gtk.Align.START)
@@ -72,6 +75,15 @@ class SettingsWindow(Gtk.Window):
         self.endbox.pack_start(self.savebut, False, False, 0)
         self.endbox.pack_start(self.okbut, False, False, 0)
 
+        # Appends current settings to fields
+        self.labels = SettingsWindow.getlabels()
+        self.ip.add_text(self.labels["sshhost"])
+        self.port.add_text(self.labels["sshport"]) 
+        self.username.add_text(self.labels["sshport"])
+        self.sshdir.add_text(self.labels['messagesdirectory'])
+        self.rcpgdir.add_text(self.labels['recpgpdir'])
+        self.uspgdir.add_text(self.labels['usrpgpdir'])
+        self.uspgpwd.add_text(self.labels['usrpgppassword'])
 
         # Packs all elements into column
         self.column.pack_start(self.ip, False, False, 0)
@@ -90,6 +102,19 @@ class SettingsWindow(Gtk.Window):
         self.vbox = Gtk.VBox(spacing=0,homogeneous=False)
         self.vbox.pack_start(self.column,False,False,0)
         self.add(self.vbox)
+
+    def getlabels():
+        from settings.settings import *
+        labels = {}
+        labels['sshhost'] = sshhost
+        labels['sshuser'] = sshuser
+        labels['sshport'] = sshport
+        labels['messagesdirectory'] = messagesdirectory
+        labels['recpgpdir'] = recpgpdir
+        labels['usrpgpdir'] = usrpgpdir
+        labels['userpgppassword'] = userpgppassword
+        del settings.settings
+
     
     def filechooser(self,label):
         win = Gtk.Window(title=str('File picker'))
@@ -110,36 +135,36 @@ class SettingsWindow(Gtk.Window):
         dialog.destroy()
 
     def saver(self):
-        ip = Gtk.get_text(self.ip) 
-        port = Gtk.get_text(self.port)
-        user = Gtk.get_text(self.username) 
-        rcdir = Gtk.get_text(self.rcpgdir)
-        usdir = Gtk.get_text(self.uspgdir) 
-        uspwd = Gtk.get_text(self.usrpwd)
-        sshpwdtext = Gtk.get_text(self.sshpwd)
-        sshdirector = Gtk.get_text(self.sshdir)
+        ip = str(self.ip.get_text())
+        port = str(self.port.get_text())
+        user = str(self.username.get_text())
+        rcdir = str(self.rcpgdir.get_text())
+        usdir = str(self.uspgdir.get_text())
+        uspwd = str(self.uspgpwd.get_text())
+        sshpwdtext = str(self.sshpwd.get_text())
+        sshdirector = str(self.sshdir.get_text()) 
 
         testresults = self.checker()
 
-        contents = str('sshhost = %s\n','sshuser = %s\n','sshport = %s\n','messagesdirectory = %s\n','recpgpdir = %s\n','usrpgpdir = %s\n','userpgppassword = %s\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd))
+        contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir = \'%s\'\nuserpgppassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd))
 
         if testresults[0] == True:
             with open(settingsdir, 'w') as file:
                 file.write(contents)
-            statbox = StatusWindow(content = 'Settings successfully tested and saved')
+            statbox = self.StatusWindow(content = 'Settings successfully tested and saved')
             statbox.show_all()
         else:
-            statbox = StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % checker[1]))
+            statbox = self.StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
             statbox.show_all()
 
     def tester(self):
         testresults = self.checker()
         
         if testresults[0] == True:
-            statbox = StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')
+            statbox = self.StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')
             statbox.show_all()
         else:
-            statbox = StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % checker[1]))
+            statbox = self.StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
             statbox.show_all()
 
     def quitter(self):
@@ -149,14 +174,14 @@ class SettingsWindow(Gtk.Window):
     def agreer(self):
         ip = self.ip.get_text() 
         port = self.port.get_text() 
-        user = self.username.gettext()
-        rcdir = self.rcpgdir.gettext()
-        usdir = self.uspgdir.gettext()
-        uspwd =self.usrpwd.gettext()
+        user = self.username.get_text()
+        rcdir = self.rcpgdir.get_text()
+        usdir = self.uspgdir.get_text()
+        uspwd = self.uspgpwd.get_text()
         sshpwdtext = self.sshpwd.get_text()
-        sshdirector = self.sshdir.get_text()
+        sshdirector = self.sshdir.get_text() 
         
-        contents = str('sshhost = %s\n','sshuser = %s\n','sshport = %s\n','messagesdirectory = %s\n','recpgpdir = %s\n','usrpgpdir = %s\n','userpgppassword = %s\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd))
+        contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir =       \'%s\'\nuserpgppassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd))
 
         with open(settingsdir, "r") as file:
             filecontents = file.read()
@@ -179,7 +204,7 @@ class SettingsWindow(Gtk.Window):
 
                 self.row = Gtk.Box(spacing=15)
                 
-                self.text = Gtk.Label('Sure you want to cancel? Any changes will be reset')
+                self.text = Gtk.Label('Sure you want to cancel? Any unsaved changes will be reset')
                 
                 self.exitbutton = Gtk.Button(label="Reset my Settings")
                 self.exitbutton.connect("clicked", lambda widget:super_destroy(self,superclass))
@@ -211,10 +236,10 @@ class SettingsWindow(Gtk.Window):
     def checker(self):
         ip = self.ip.get_text() 
         port = self.port.get_text() 
-        user = self.username.gettext()
-        rcdir = self.rcpgdir.gettext()
-        usdir = self.uspgdir.gettext()
-        uspwd =self.usrpwd.gettext()
+        user = self.username.get_text()
+        rcdir = self.rcpgdir.get_text()
+        usdir = self.uspgdir.get_text()
+        uspwd =self.uspgpwd.get_text()
         sshpwdtext = self.sshpwd.get_text()
         sshdirector = self.sshdir.get_text()
 
@@ -242,10 +267,10 @@ class SettingsWindow(Gtk.Window):
         elif len(sshdirector) <= 0:
             errors = 'Invalid ssh directory format (wrong format or empty)'
             counter += 1 
-        elif functions.pgppasswordverif(functions.getpgp(usdir, uspwd)).is_correct == False:
+        elif functions.pgppasswordverif(functions.getpgp(usdir),uspwd).is_correct == False:
             errors = 'Incorrect PGP password'
             counter += 1 
-        elif functions.sshpasswordverif(host,user,port,sshpwdtext):
+        elif functions.sshpasswordverif(ip,user,port,sshpwdtext).is_correct == False:
             errors = 'Incorrect SSH password'
             counter += 1 
         
