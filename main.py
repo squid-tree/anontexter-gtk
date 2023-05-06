@@ -13,9 +13,70 @@ from settings.settings import sshpassword as o1sshpassword
 import os
 import re
 
-
 settingsdir = str('%s/settings/settings.py' % os.path.dirname(os.path.realpath(__file__)))
 
+def message_list_refresh():
+    try:
+        masterchecker()[0] == True
+        messagelist = functions.messagesget(o1sshhost, o1sshuser, o1sshport,o1sshpassword)
+    except Exception as e:
+        print(repr(e))
+        quit()
+    else:
+        try:
+            messagelist = functions.messagesunlock(messagelist, functions.getpgp(o1usrpgpdir), o1userpgppassword)
+        except Exception as e:
+            print(repr(e))
+            quit()
+        else: 
+            return messagelist
+
+
+def masterchecker():
+    ip = str(o1sshhost) 
+    port = str(o1sshport) 
+    user = str(o1sshuser) 
+    rcdir = str(o1recpgpdir) 
+    usdir = str(o1usrpgpdir) 
+    uspwd = str(o1userpgppassword)
+    sshpwdtext = str(o1sshpassword)
+    sshdirector = str(o1messagesdirectory) 
+
+    counter = 0
+    errors = str()
+
+    if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
+        errors = 'Invalid ip address (wrong format or empty)'
+        counter += 1 
+    elif len(port) <= 0:
+        errors = 'Invalid port (wrong format or empty)'
+        counter += 1
+    elif len(user) <= 0:
+        errors = 'Invalid user (wrong format or empty)'
+        counter += 1 
+    elif os.path.isfile(rcdir) != True:
+        errors = 'Invalid file path'
+        counter += 1 
+    elif os.path.isfile(usdir) != True:
+        errors = 'Invalid file path'
+        counter += 1 
+    elif len(uspwd) <= 0:
+        errors = 'Invalid secretkey password (wrong format or empty)'
+        counter += 1 
+    elif len(sshdirector) <= 0:
+        errors = 'Invalid ssh directory format (wrong format or empty)'
+        counter += 1 
+    elif functions.pgppasswordverif(functions.getpgp(usdir),uspwd).is_correct == False:
+        errors = 'Incorrect PGP password'
+        counter += 1 
+    elif functions.sshpasswordverif(ip,user,port,sshpwdtext).is_correct == False:
+        errors = 'Incorrect SSH password'
+        counter += 1 
+    
+    if counter == 0:
+        return (True, errors)
+    else:
+        return (False, errors)
 
 def win_destroy(widget):
     widget.destroy()
@@ -160,6 +221,14 @@ class SettingsWindow(Gtk.Window):
                 file.write(contents)
             statbox = self.StatusWindow(content = 'Settings successfully tested and saved')
             statbox.show_all()
+            o1sshhost = ip
+            o1sshport = port
+            o1sshuser = user
+            o1rcrpgpdir = rcdir
+            o1usrpgpdir = usdir
+            o1usrpgppassword = uspwd
+            o1sshpassword = sshpwdtext
+            o1messagesdirectory = sshdirector
         else:
             statbox = self.StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
             statbox.show_all()
@@ -204,6 +273,7 @@ class SettingsWindow(Gtk.Window):
     class CancelWindow(Gtk.Window):
             def __init__(self, superclass):
                 super().__init__(title='AnonTexter Gtk - Status Window')
+
                 self.connect("destroy", lambda widget: self.destroy)
 
                 
@@ -294,11 +364,14 @@ class MainWindow(Gtk.Window):
         super().__init__(title='AnonTexter Gtk - Home')
 
         self.border_width=(5,5)
+        
+        self.vbox = Gtk.VBox(spacing=0)
 
         # Creation of top box
         self.topbar = Gtk.Box()
         self.topbar.set_valign(Gtk.Align.START)
         self.topbar.set_size_request(-1,5)
+        self.topbar.set_hexpand(True)
         
         # Settings Button
         self.settingsbutton = Gtk.Button(label='Settings')
@@ -306,22 +379,89 @@ class MainWindow(Gtk.Window):
         self.settingsbutton.set_halign(Gtk.Align.START)
         self.settingsbutton.connect("clicked", self.opensettings)
         self.topbar.pack_start(self.settingsbutton, False, False, 0)
+
+        # Refresh Button
+        self.settingsbutton = Gtk.Button(label= u"\U0001F5D8")
+        self.settingsbutton.set_size_request(30,-1)
+        self.settingsbutton.set_halign(Gtk.Align.END)
+        self.settingsbutton.connect("clicked", lambda widget: self.messagesrefresh())
+        self.topbar.pack_start(self.settingsbutton, False, False, 0)
+
+        # Chatwindow
+
+        self.chatbar = Gtk.Box(spacing = 5)
+
+        self.pointer = Gtk.Label('> ')
+
+        self.entry = Gtk.Entry(placeholder_text='Enter a Message')
+
+        self.entry.connect("activate", self.message_send)
+        self.entry.set_alignment(xalign=0)
+        self.entry.set_hexpand(True)
+
+        self.chatbar.pack_start(self.pointer, False, False, 0)
+        self.chatbar.pack_start(self.entry, False, True, 0)
         
+        self.chatbar.set_hexpand(True)
+
+        self.messagebox = Gtk.Box(spacing=5)
+        self.messagebox.set_orientation(Gtk.Orientation.VERTICAL)
+        self.messagebox.set_hexpand(True)
+        self.messagebox.set_vexpand(True)
+
+        self.chatwindow = Gtk.ScrolledWindow()
+        self.chatwindow.set_hexpand(True)
+        self.chatwindow.set_vexpand(True)
+        self.chatwindow.set_policy(Gtk.PolicyType.ALWAYS,Gtk.PolicyType.AUTOMATIC)
+        self.chatwindow.set_min_content_height(self.get_size()[1])
+        self.chatwindow.add(self.messagebox)
+        
+        
+        self.add(self.vbox)
+
         # Seperator
         self.seperator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         self.seperator.set_size_request(-1, 8)
        
         # Loading of elements into vbox
-        self.vbox = Gtk.VBox(spacing=0)
         self.vbox.pack_start(self.topbar, False, False, 0)
         self.vbox.pack_start(self.seperator, False, False, 0)
+        self.vbox.pack_start(self.chatwindow, True, True, 0)
+        self.vbox.pack_start(self.chatbar, False, True, 0)
 
         # Adding the vbox 
         self.add(self.vbox)
+
+        self.messagesrefresh()
+
     
     def opensettings(self,widget):
         o = SettingsWindow()
         o.show_all()
+
+    def message_send(self,widget):
+        if masterchecker()[0] == True:
+            o = self.entry.get_text()
+            functions.sendmessage(o, functions.getpgp(str(o1recpgpdir)), o1sshhost, o1sshuser, o1sshport, o1sshpassword)
+            self.entry.set_text('')
+            adjustment = self.chatwindow.get_vadjustment()
+            adjustment.set_value(adjustment.get_upper() - adjustment.get_page_size())
+            self.messagesrefresh()
+
+        
+    def messagesrefresh(self):
+            messagelist = message_list_refresh()
+            
+            # Clear Messages
+            for i in self.messagebox.get_children():
+                self.messagebox.remove(i)
+            
+            # Add messages
+            for i in reversed(messagelist):
+                self.messagebox.pack_end(Gtk.Label(label=str('%s    %s' % (i, messagelist[i])),xalign=0), False, False, 0)
+
+            # Display messages
+            self.show_all()
 
 win = MainWindow()
 win.connect("destroy", Gtk.main_quit)

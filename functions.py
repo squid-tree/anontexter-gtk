@@ -16,6 +16,8 @@ def getpgp(directory):
     try:
         key = pgpy.PGPKey.from_file(directory)
     except:
+        print("BIG key error")
+        quit()
         return checkedpassword(is_correct=False)
     else:
         return key
@@ -61,29 +63,39 @@ def messagesget(sshhost,sshuser,sshport,password):
 
     return filemessages
 
-def messagesunlock(filemessages, usrpgp):
+def messagesunlock(filemessages, usrpgp, password):
     decryptedmessages = {}
 
     for i in filemessages:
         msg = pgpy.PGPMessage.from_blob(filemessages[i])
         try: 
-            with usrpgp.unlock(password):
-                decryptmsg = usrpgp.decrypt(msg).message
+            with usrpgp[0].unlock(password):
+                decryptmsg = usrpgp[0].decrypt(msg).message
         except Exception as e:
             decryptedmessages[i] = str("Unencryptable message (Could be made by you or someone who wasn't talking to you")
+            print(repr(e))
             continue
         else:
             decryptedmessages[i] = decryptmsg
             continue
+    
+    return decryptedmessages
 
-        print("Message successfully sent")
 
-def sendmessage(message, recpgp):    
+def sendmessage(message, recpgp, sshhost,sshuser,sshport,password):    
     filename = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    conn=fabric.Connection(host=sshhost, user=sshuser, port=sshport, connect_kwargs={'password': password}, connect_timeout=5)
+
+    msg = pgpy.PGPMessage.new(message)
     
     try:
-        msg = recpgp[0].encrypt(message)
+        msg = recpgp[0].encrypt(msg)
     except Exception as e:
+        print(recpgp[0])
+        print(repr(e))
+        print('pgperror')
+        quit()
         return checkedpassword(is_correct=False, other_error=repr(e))
 
     try:
@@ -92,3 +104,4 @@ def sendmessage(message, recpgp):
         return checkedpassword(is_correct=False, other_error=repr(e))
     else:
         return checkedpassword(is_correct=True)
+
