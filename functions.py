@@ -1,19 +1,24 @@
 import settings 
 import pgpy 
 import fabric
-import os
-import multiprocessing
 from pgpy import PGPKey
 import inspect
 from fabric import Connection
 from settings.settings import * 
 from datetime import datetime
-import sys
 
 class checkedpassword():
     def __init__(self, is_correct, other_error=None):
         self.is_correct = is_correct
         self.other_error=None
+
+def getpgp(directory):
+    try:
+        key = pgpy.PGPKey.from_file(directory)
+    except:
+        return checkedpassword(is_correct=False)
+    else:
+        return key
 
 def sshpasswordverif(sshhost,sshuser,sshport,password):
     try:
@@ -33,8 +38,6 @@ def pgppasswordverif(usrpgp, password):
         return checkedpassword(is_correct=False, other_error=repr(e))
     else:
         return checkedpassword(is_correct=True)
-
-
 
 def messagesget(sshhost,sshuser,sshport,password):
     conn = fabric.Connection(host=sshhost, user=sshuser, port=sshport, connect_kwargs={'password': password}, connect_timeout=5)
