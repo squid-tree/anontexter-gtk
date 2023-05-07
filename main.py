@@ -81,6 +81,15 @@ def masterchecker():
 def win_destroy(widget):
     widget.destroy()
 
+class StatusWindow(Gtk.Window):
+    def __init__(self, content):
+        super().__init__(title='AnonTexter Gtk - Status Window')
+        self.connect("destroy", win_destroy)
+
+        frame = Gtk.Frame(label=content)
+        
+        self.add(frame)
+
 class SettingsWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title='Anontexter Gtk - Settings')
@@ -212,14 +221,14 @@ class SettingsWindow(Gtk.Window):
         sshpwdtext = str(self.sshpwd.get_text())
         sshdirector = str(self.sshdir.get_text()) 
 
-        testresults = self.checker()
+        testresults = masterchecker()
 
         contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir = \'%s\'\nuserpgppassword = \'%s\'\nsshpassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd,sshpwdtext))
 
         if testresults[0] == True:
             with open(settingsdir, 'w') as file:
                 file.write(contents)
-            statbox = self.StatusWindow(content = 'Settings successfully tested and saved')
+            statbox = StatusWindow(content = 'Settings successfully tested and saved')
             statbox.show_all()
             o1sshhost = ip
             o1sshport = port
@@ -230,11 +239,11 @@ class SettingsWindow(Gtk.Window):
             o1sshpassword = sshpwdtext
             o1messagesdirectory = sshdirector
         else:
-            statbox = self.StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
+            statbox = StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
             statbox.show_all()
 
     def tester(self):
-        testresults = self.checker()
+        testresults = masterchecker()
         
         if testresults[0] == True:
             statbox = self.StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')
@@ -263,11 +272,11 @@ class SettingsWindow(Gtk.Window):
             filecontents = file.read()
 
         if filecontents == contents:
-            o = self.StatusWindow(content = 'Succesfully exited')
+            o = StatusWindow(content = 'Succesfully exited')
             o.show_all()
             win_destroy(super())
         else:
-            o = self.StatusWindow(content = 'Changes have not been saved, please save them or cancel')
+            o = StatusWindow(content = 'Changes have not been saved, please save them or cancel')
             o.show_all()
              
     class CancelWindow(Gtk.Window):
@@ -303,61 +312,6 @@ class SettingsWindow(Gtk.Window):
 
                 self.add(self.box)
 
-    class StatusWindow(Gtk.Window):
-        def __init__(self, content):
-            super().__init__(title='AnonTexter Gtk - Status Window')
-            self.connect("destroy", win_destroy)
-
-            frame = Gtk.Frame(label=content)
-            
-            self.add(frame)
-
-    def checker(self):
-        ip = self.ip.get_text() 
-        port = self.port.get_text() 
-        user = self.username.get_text()
-        rcdir = self.rcpgdir.get_text()
-        usdir = self.uspgdir.get_text()
-        uspwd =self.uspgpwd.get_text()
-        sshpwdtext = self.sshpwd.get_text()
-        sshdirector = self.sshdir.get_text()
-
-        counter = 0
-        errors = str()
-
-        if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
-            errors = 'Invalid ip address (wrong format or empty)'
-            counter += 1 
-        elif len(port) <= 0:
-            errors = 'Invalid port (wrong format or empty)'
-            counter += 1
-        elif len(user) <= 0:
-            errors = 'Invalid user (wrong format or empty)'
-            counter += 1 
-        elif os.path.isfile(rcdir) != True:
-            errors = 'Invalid file path'
-            counter += 1 
-        elif os.path.isfile(usdir) != True:
-            errors = 'Invalid file path'
-            counter += 1 
-        elif len(uspwd) <= 0:
-            errors = 'Invalid secretkey password (wrong format or empty)'
-            counter += 1 
-        elif len(sshdirector) <= 0:
-            errors = 'Invalid ssh directory format (wrong format or empty)'
-            counter += 1 
-        elif functions.pgppasswordverif(functions.getpgp(usdir),uspwd).is_correct == False:
-            errors = 'Incorrect PGP password'
-            counter += 1 
-        elif functions.sshpasswordverif(ip,user,port,sshpwdtext).is_correct == False:
-            errors = 'Incorrect SSH password'
-            counter += 1 
-        
-        if counter == 0:
-            return (True, errors)
-        else:
-            return (False, errors)
-        
 class MainWindow(Gtk.Window):
     def __init__(self):
         # Initial settings
@@ -447,9 +401,13 @@ class MainWindow(Gtk.Window):
             adjustment = self.chatwindow.get_vadjustment()
             adjustment.set_value(adjustment.get_upper() - adjustment.get_page_size())
             self.messagesrefresh()
+        else:
+            o = StatusWindow(content='Failed to send message, the settings are incorrect')
+            o.show_all()
 
         
     def messagesrefresh(self):
+        if masterchecker()[0] == True:
             messagelist = message_list_refresh()
             
             # Clear Messages
@@ -462,6 +420,10 @@ class MainWindow(Gtk.Window):
 
             # Display messages
             self.show_all()
+        else: 
+            o = StatusWindow(content='Failed to refresh messages, the settings are incorrect')
+            o.show_all()
+
 
 win = MainWindow()
 win.connect("destroy", Gtk.main_quit)
