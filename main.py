@@ -33,16 +33,18 @@ def message_list_refresh():
 
 
 def masterchecker(*args):
-    if tester = True:
-        ip = str(self.ip.get_text())
-        port = str(self.port.get_text())
-        user = str(self.username.get_text())
-        rcdir = str(self.rcpgdir.get_text())
-        usdir = str(self.uspgdir.get_text())
-        uspwd = str(self.uspgpwd.get_text())
-        sshpwdtext = str(self.sshpwd.get_text())
-        sshdirector = str(self.sshdir.get_text()) 
-    else:
+    try:
+        if args[0]['tester'] == True and repr(args[1]['self']) != None:
+            o1self = args[1]['self']
+            ip = str(o1self.ip.get_text())
+            port = str(o1self.port.get_text())
+            user = str(o1self.username.get_text())
+            rcdir = str(o1self.rcpgdir.get_text())
+            usdir = str(o1self.uspgdir.get_text())
+            uspwd = str(o1self.uspgpwd.get_text())
+            sshpwdtext = str(o1self.sshpwd.get_text())
+            sshdirector = str(o1self.sshdir.get_text()) 
+    except Exception:
         ip = str(o1sshhost) 
         port = str(o1sshport) 
         user = str(o1sshuser) 
@@ -51,10 +53,13 @@ def masterchecker(*args):
         uspwd = str(o1userpgppassword)
         sshpwdtext = str(o1sshpassword)
         sshdirector = str(o1messagesdirectory) 
+    #except Exception as e:
+    #   return (False, e)
 
     counter = 0
     errors = str()
-
+    
+    print('testing %s %s' % (uspwd,usdir))
     if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
         errors = 'Invalid ip address (wrong format or empty)'
         counter += 1 
@@ -76,7 +81,7 @@ def masterchecker(*args):
     elif len(sshdirector) <= 0:
         errors = 'Invalid ssh directory format (wrong format or empty)'
         counter += 1 
-    elif functions.pgppasswordverif(functions.getpgp(usdir),uspwd).is_correct == False:
+    elif functions.pgppasswordverif(functions.getpgp(usdir),uspwd).is_correct != True:
         errors = 'Incorrect PGP password'
         counter += 1 
     elif functions.sshpasswordverif(ip,user,port,sshpwdtext).is_correct == False:
@@ -100,12 +105,46 @@ class StatusWindow(Gtk.Window):
         
         self.add(frame)
 
+class RefreshWindow(Gtk.Window):
+    def __init__(self, content):
+            super().__init__(title='AnonTexter Gtk - Status Window')
+            self.connect('delete-event', Gtk.main_quit)
+
+            self.box = Gtk.Box(spacing = 5, orientation=Gtk.Orientation.VERTICAL)
+
+            self.frame = Gtk.Frame(label=content)
+
+            self.bottom_row=Gtk.Box(spacing = 10)
+
+            self.button = Gtk.Button(label='Restart Now')
+            self.button.connect("clicked", Gtk.main_quit)
+            self.bottom_row.pack_end(self.button, False, False, 0)
+
+            self.continuer = Gtk.Button(label='Continue in App')
+            self.continuer.connect("clicked", lambda widget: win_destroy(self)) 
+            self.bottom_row.pack_start(self.continuer, False, False, 0)
+
+            self.box.pack_start(self.frame, True, True, 0)
+            self.box.pack_start(self.bottom_row, False, False, 0)
+            
+            self.add(self.box)
+
+
+
 class SettingsWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title='Anontexter Gtk - Settings')
         self.connect("destroy", win_destroy)
         
-        
+        #globals:
+        global o1sshhost
+        global o1sshport
+        global o1sshuser
+        global o1messagesdirectory
+        global o1recpgpdir
+        global o1usrpgpdir
+        global o1userpgppassword
+        global o1sshpassword
 
         # Defines column Box
         self.column = Gtk.Box(spacing=5, orientation=Gtk.Orientation.VERTICAL,homogeneous=False)
@@ -162,15 +201,14 @@ class SettingsWindow(Gtk.Window):
         self.endbox.pack_start(self.okbut, False, False, 0)
 
         # Appends current settings to fields
-        self.labels = SettingsWindow.getlabels()
-        self.ip.set_text(self.labels["sshhost"])
-        self.port.set_text(self.labels["sshport"]) 
-        self.username.set_text(self.labels["sshuser"])
-        self.sshdir.set_text(self.labels['messagesdirectory'])
-        self.rcpgdir.set_text(self.labels['recpgpdir'])
-        self.uspgdir.set_text(self.labels['usrpgpdir'])
-        self.uspgpwd.set_text(self.labels['userpgppassword'])
-        self.sshpwd.set_text(self.labels['sshpassword'])
+        self.ip.set_text(o1sshhost)
+        self.port.set_text(o1sshport) 
+        self.username.set_text(o1sshuser)
+        self.sshdir.set_text(o1messagesdirectory)
+        self.rcpgdir.set_text(o1recpgpdir)
+        self.uspgdir.set_text(o1usrpgpdir)
+        self.uspgpwd.set_text(o1userpgppassword)
+        self.sshpwd.set_text(o1sshpassword)
 
         # Packs all elements into column
         self.column.pack_start(self.ip, False, False, 0)
@@ -190,19 +228,6 @@ class SettingsWindow(Gtk.Window):
         self.vbox.pack_start(self.column,False,False,0)
         self.add(self.vbox)
 
-    def getlabels():
-        labels = {}
-        labels['sshhost'] = o1sshhost
-        labels['sshuser'] = o1sshuser
-        labels['sshport'] = o1sshport
-        labels['messagesdirectory'] = o1messagesdirectory
-        labels['recpgpdir'] = o1recpgpdir
-        labels['usrpgpdir'] = o1usrpgpdir
-        labels['userpgppassword'] = o1userpgppassword
-        labels['sshpassword'] = o1sshpassword
-        return labels
-
-    
     def filechooser(self,label):
         win = Gtk.Window(title=str('File picker'))
 
@@ -222,6 +247,16 @@ class SettingsWindow(Gtk.Window):
         dialog.destroy()
 
     def saver(self):
+        #globals:
+        global o1sshhost
+        global o1sshport
+        global o1sshuser
+        global o1messagesdirectory
+        global o1recpgpdir
+        global o1usrpgpdir
+        global o1userpgppassword
+        global o1sshpassword
+
         ip = str(self.ip.get_text())
         port = str(self.port.get_text())
         user = str(self.username.get_text())
@@ -231,15 +266,13 @@ class SettingsWindow(Gtk.Window):
         sshpwdtext = str(self.sshpwd.get_text())
         sshdirector = str(self.sshdir.get_text()) 
 
-        testresults = masterchecker()
+        testresults = masterchecker({'tester': True}, {'self': self})
 
         contents = str('sshhost = \'%s\'\nsshuser = \'%s\'\nsshport = \'%s\'\nmessagesdirectory = \'%s\'\nrecpgpdir = \'%s\'\nusrpgpdir = \'%s\'\nuserpgppassword = \'%s\'\nsshpassword = \'%s\'\n' % (ip, user, port, sshdirector, rcdir, usdir, uspwd,sshpwdtext))
 
         if testresults[0] == True:
             with open(settingsdir, 'w') as file:
                 file.write(contents)
-            statbox = StatusWindow(content = 'Settings successfully tested and saved')
-            statbox.show_all()
             o1sshhost = ip
             o1sshport = port
             o1sshuser = user
@@ -248,12 +281,14 @@ class SettingsWindow(Gtk.Window):
             o1usrpgppassword = uspwd
             o1sshpassword = sshpwdtext
             o1messagesdirectory = sshdirector
+            statbox = RefreshWindow(content = 'Settings successfully tested and saved, refresh to apply')
+            statbox.show_all()
         else:
             statbox = StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
             statbox.show_all()
 
     def tester(self):
-        testresults = masterchecker(tester=True, self = self)
+        testresults = masterchecker({'tester': True}, {'self': self})
         
         if testresults[0] == True:
             statbox = StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')

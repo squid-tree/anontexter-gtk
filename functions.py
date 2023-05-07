@@ -33,14 +33,23 @@ def sshpasswordverif(sshhost,sshuser,sshport,password):
 
 def pgppasswordverif(usrpgp, password):
     try:
-        usrpgp[0].unlock(password)
+        with usrpgp[0].unlock(password):
+            if usrpgp[0].is_unlocked == True:
+                x = True
+            else:
+                x = False
     except pgpy.errors.PGPDecryptionError as e:
-        return checkedpassword(is_correct=False, other_error=repr(e)) 
-        
+        return checkedpassword(is_correct=False, other_error=repr(e))  
     except Exception as e:
         return checkedpassword(is_correct=False, other_error=repr(e))
     else:
-        return checkedpassword(is_correct=True)
+        print(repr(usrpgp))
+        if x==True:
+            print('%s is actually correct' % password)
+            return checkedpassword(is_correct=True)
+        elif x==False:
+            print('%s is incorrect' % password)
+            return checkedpassword(is_correct=False)
 
 def messagesget(sshhost,sshuser,sshport,password):
     conn = fabric.Connection(host=sshhost, user=sshuser, port=sshport, connect_kwargs={'password': password}, connect_timeout=5)
