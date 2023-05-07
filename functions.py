@@ -31,6 +31,15 @@ def sshpasswordverif(sshhost,sshuser,sshport,password):
     else:
         return checkedpassword(is_correct=True)
 
+def sshdirverif(sshhost,sshuser,sshport,password,msgdir):
+    conn = fabric.Connection(host=sshhost, user=sshuser, port=sshport, connect_kwargs={'password': password}, connect_timeout=5)    
+    try: 
+        messagelist = conn.run('ls %s' % msgdir).stdout
+    except Exception as e:
+        return checkedpassword(is_correct=False, other_error=repr(e))
+    else:
+        return checkedpassword(is_correct=True) 
+
 def pgppasswordverif(usrpgp, password):
     try:
         with usrpgp[0].unlock(password):
@@ -51,11 +60,11 @@ def pgppasswordverif(usrpgp, password):
             print('%s is incorrect' % password)
             return checkedpassword(is_correct=False)
 
-def messagesget(sshhost,sshuser,sshport,password):
+def messagesget(sshhost,sshuser,sshport,password,msgdir):
     conn = fabric.Connection(host=sshhost, user=sshuser, port=sshport, connect_kwargs={'password': password}, connect_timeout=5)
     
     try: 
-        messagelist = conn.run('ls %s' % messagesdirectory).stdout
+        messagelist = conn.run('ls %s' % msgdir).stdout
     except Exception as e:
         return checkedpassword(is_correct=False, other_error=repr(e))
 
@@ -65,7 +74,7 @@ def messagesget(sshhost,sshuser,sshport,password):
 
     for i in filelist:
         try:
-            msgcat = conn.run('cat \'%s\'/\'%s\'' % (messagesdirectory,i))
+            msgcat = conn.run('cat \'%s\'/\'%s\'' % (msgdir,i))
         except Exception as e:
             return str("There was an error, perhaps the file directory doesn't exist or the ssh details were wrong?: %s" % repr(e))
         filemessages[i] = msgcat.stdout

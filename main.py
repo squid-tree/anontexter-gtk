@@ -18,7 +18,7 @@ settingsdir = str('%s/settings/settings.py' % os.path.dirname(os.path.realpath(_
 def message_list_refresh():
     try:
         masterchecker()[0] == True
-        messagelist = functions.messagesget(o1sshhost, o1sshuser, o1sshport,o1sshpassword)
+        messagelist = functions.messagesget(o1sshhost, o1sshuser, o1sshport,o1sshpassword, o1messagesdirectory)
     except Exception as e:
         print(repr(e))
         quit()
@@ -77,6 +77,8 @@ def masterchecker(*args):
         return (False, 'Incorrect PGP password')
     elif functions.sshpasswordverif(ip,user,port,sshpwdtext).is_correct == False:
         return (False,'Incorrect SSH password')
+    elif functions.sshdirverif(ip,user,port,sshpwdtext,sshdirector).is_correct == False:
+        return (False, 'Invalid SSH directory')
     return (True, errors)
 
 def win_destroy(widget):
@@ -122,16 +124,6 @@ class SettingsWindow(Gtk.Window):
         super().__init__(title='Anontexter Gtk - Settings')
         self.connect("destroy", win_destroy)
         
-        #globals:
-        global o1sshhost
-        global o1sshport
-        global o1sshuser
-        global o1messagesdirectory
-        global o1recpgpdir
-        global o1usrpgpdir
-        global o1userpgppassword
-        global o1sshpassword
-
         # Defines column Box
         self.column = Gtk.Box(spacing=5, orientation=Gtk.Orientation.VERTICAL,homogeneous=False)
         self.column.set_halign(Gtk.Align.START)
