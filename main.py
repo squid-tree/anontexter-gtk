@@ -246,10 +246,10 @@ class SettingsWindow(Gtk.Window):
         testresults = masterchecker()
         
         if testresults[0] == True:
-            statbox = self.StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')
+            statbox = StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')
             statbox.show_all()
         else:
-            statbox = self.StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
+            statbox = StatusWindow(content = str('Aborted: incorrect settings detected (%s)' % testresults[1]))
             statbox.show_all()
 
     def quitter(self):
