@@ -32,15 +32,25 @@ def message_list_refresh():
             return messagelist
 
 
-def masterchecker():
-    ip = str(o1sshhost) 
-    port = str(o1sshport) 
-    user = str(o1sshuser) 
-    rcdir = str(o1recpgpdir) 
-    usdir = str(o1usrpgpdir) 
-    uspwd = str(o1userpgppassword)
-    sshpwdtext = str(o1sshpassword)
-    sshdirector = str(o1messagesdirectory) 
+def masterchecker(*args):
+    if tester = True:
+        ip = str(self.ip.get_text())
+        port = str(self.port.get_text())
+        user = str(self.username.get_text())
+        rcdir = str(self.rcpgdir.get_text())
+        usdir = str(self.uspgdir.get_text())
+        uspwd = str(self.uspgpwd.get_text())
+        sshpwdtext = str(self.sshpwd.get_text())
+        sshdirector = str(self.sshdir.get_text()) 
+    else:
+        ip = str(o1sshhost) 
+        port = str(o1sshport) 
+        user = str(o1sshuser) 
+        rcdir = str(o1recpgpdir) 
+        usdir = str(o1usrpgpdir) 
+        uspwd = str(o1userpgppassword)
+        sshpwdtext = str(o1sshpassword)
+        sshdirector = str(o1messagesdirectory) 
 
     counter = 0
     errors = str()
@@ -243,7 +253,7 @@ class SettingsWindow(Gtk.Window):
             statbox.show_all()
 
     def tester(self):
-        testresults = masterchecker()
+        testresults = masterchecker(tester=True, self = self)
         
         if testresults[0] == True:
             statbox = StatusWindow(content = 'Settings successfully tested and seem to be correct (keep in mind, some might still be wrong)')
