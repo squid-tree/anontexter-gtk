@@ -59,39 +59,25 @@ def masterchecker(*args):
     counter = 0
     errors = str()
     
-    print('testing %s %s' % (uspwd,usdir))
     if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
-        errors = 'Invalid ip address (wrong format or empty)'
-        counter += 1 
+        return (False, 'Invalid ip address (wrong format or empty)')
     elif len(port) <= 0:
-        errors = 'Invalid port (wrong format or empty)'
-        counter += 1
+        return (False,'Invalid port (wrong format or empty)')
     elif len(user) <= 0:
-        errors = 'Invalid user (wrong format or empty)'
-        counter += 1 
+        return (False, 'Invalid user (wrong format or empty)')
     elif os.path.isfile(rcdir) != True:
-        errors = 'Invalid file path'
-        counter += 1 
+        return (False,'Invalid file path')
     elif os.path.isfile(usdir) != True:
-        errors = 'Invalid file path'
-        counter += 1 
+        return (False,'Invalid file path')
     elif len(uspwd) <= 0:
-        errors = 'Invalid secretkey password (wrong format or empty)'
-        counter += 1 
+        return (False,'Invalid secretkey password (wrong format or empty)')
     elif len(sshdirector) <= 0:
-        errors = 'Invalid ssh directory format (wrong format or empty)'
-        counter += 1 
+        return (False, 'Invalid ssh directory format (wrong format or empty)')
     elif functions.pgppasswordverif(functions.getpgp(usdir),uspwd).is_correct != True:
-        errors = 'Incorrect PGP password'
-        counter += 1 
+        return (False, 'Incorrect PGP password')
     elif functions.sshpasswordverif(ip,user,port,sshpwdtext).is_correct == False:
-        errors = 'Incorrect SSH password'
-        counter += 1 
-    
-    if counter == 0:
-        return (True, errors)
-    else:
-        return (False, errors)
+        return (False,'Incorrect SSH password')
+    return (True, errors)
 
 def win_destroy(widget):
     widget.destroy()
