@@ -225,16 +225,6 @@ class SettingsWindow(Gtk.Window):
         dialog.destroy()
 
     def saver(self):
-        #globals:
-        global o1sshhost
-        global o1sshport
-        global o1sshuser
-        global o1messagesdirectory
-        global o1recpgpdir
-        global o1usrpgpdir
-        global o1userpgppassword
-        global o1sshpassword
-
         ip = str(self.ip.get_text())
         port = str(self.port.get_text())
         user = str(self.username.get_text())
