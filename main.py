@@ -87,7 +87,7 @@ def win_destroy(widget):
 class StatusWindow(Gtk.Window):
     def __init__(self, content):
         super().__init__(title='AnonTexter Gtk - Status Window')
-        self.connect("destroy", win_destroy)
+        self.connect("destroy", lambda widget: self.destroy)
 
         frame = Gtk.Frame(label=content)
         
@@ -109,7 +109,7 @@ class RefreshWindow(Gtk.Window):
             self.bottom_row.pack_end(self.button, False, False, 0)
 
             self.continuer = Gtk.Button(label='Continue in App')
-            self.continuer.connect("clicked", lambda widget: win_destroy(self)) 
+            self.continuer.connect("clicked", lambda widget: self.destroy) 
             self.bottom_row.pack_start(self.continuer, False, False, 0)
 
             self.box.pack_start(self.frame, True, True, 0)
