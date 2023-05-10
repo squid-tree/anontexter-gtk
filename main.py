@@ -18,18 +18,19 @@ settingsdir = str('%s/settings/settings.py' % os.path.dirname(os.path.realpath(_
 def message_list_refresh():
     try:
         masterchecker()[0] == True
-        messagelist = functions.messagesget(o1sshhost, o1sshuser, o1sshport,o1sshpassword, o1messagesdirectory)
+        with functions.getpgp(o1usrpgpdir)[0].unlock(o1userpgppassword) as pgpkey:
+            pgpuid = functions.pgpgetuid(pgpkey,o1userpgppassword)
+        messagelist = functions.messagescompare(functions.getcache(pgpuid), functions.messagesget(o1sshhost, o1sshuser, o1sshport,o1sshpassword, o1messagesdirectory))
     except Exception as e:
         print(repr(e))
         quit()
     else:
-        try:
-            messagelist = functions.messagesunlock(messagelist, functions.getpgp(o1usrpgpdir), o1userpgppassword)
-        except Exception as e:
-            print(repr(e))
-            quit()
-        else: 
-            return messagelist
+        messagelist = functions.messagesunlock(messagelist, functions.getpgp(o1usrpgpdir), o1userpgppassword)
+        
+        with functions.getpgp(o1usrpgpdir)[0].unlock(o1userpgppassword) as pgpkey:
+            pgpuid = functions.pgpgetuid(pgpkey,o1userpgppassword)
+        functions.cachemessages(pgpuid,messagelist)
+        return messagelist
 
 
 def masterchecker(*args):
@@ -246,7 +247,7 @@ class SettingsWindow(Gtk.Window):
             o1sshuser = user
             o1rcrpgpdir = rcdir
             o1usrpgpdir = usdir
-            o1usrpgppassword = uspwd
+            o1userpgppassword = uspwd
             o1sshpassword = sshpwdtext
             o1messagesdirectory = sshdirector
             statbox = RefreshWindow(content = 'Settings successfully tested and saved, refresh to apply')
@@ -413,14 +414,17 @@ class MainWindow(Gtk.Window):
             self.entry.set_text('')
             adjustment = self.chatwindow.get_vadjustment()
             adjustment.set_value(adjustment.get_upper() - adjustment.get_page_size())
+            
             self.messagesrefresh()
         else:
             o = StatusWindow(content='Failed to send message, the settings are incorrect')
             o.show_all()
-
         
     def messagesrefresh(self):
         if masterchecker()[0] == True:
+            #with functions.getpgp(o1usrpgpdir)[0].unlock(o1userpgppassword) as pgpkey:
+                #pgpuid = functions.pgpgetuid(pgpkey,o1userpgppassword)
+            #functions.cachemessages(pgpuid, message_list_refresh())
             messagelist = message_list_refresh()
             
             # Clear Messages
